@@ -334,3 +334,7 @@ body {
 .player:last-child {
     padding-left: 30px;
 }
+
+.number-container.fast-fade {
+    transition: opacity 0.2s ease-out; /* Transição de apenas 0.2 segundos */
+}
