@@ -14,11 +14,15 @@ let playerTimers = {
 
 // Guarda qual jogador está editando no modal
 let activePlayerForModal = null;
+let activePlayerForHistoryModal = null;
+let isInitialLoad = true;
 
 const diceAnimationGif = 'assets/dice-roll.gif';
 
 // Pega os elementos do DOM para o modal
 const modalOverlay = document.getElementById('modal-overlay');
+const historyModalOverlay = document.getElementById('history-modal-overlay');
+const historyLogList = document.getElementById('history-log-list');
 const modalPreviewGif = document.getElementById('modal-preview-gif');
 const hueSlider = document.getElementById('hue-slider');
 const saturationSlider = document.getElementById('saturation-slider');
@@ -33,6 +37,47 @@ const contrastValue = document.getElementById('contrast-value');
 // --- LÓGICA DO ROLADOR DE DADOS ---
 
 function rollDice(sides, player) {
+    const result = Math.floor(Math.random() * sides) + 1;
+    const timestamp = Date.now();
+
+    const rollData = {
+        player: player,
+        result: result,
+        filters: playerFilters[player],
+        timestamp: timestamp
+    };
+
+    // Atualiza a última rolagem (para a animação em tempo real)
+    database.ref('lastRoll').set(rollData);
+
+    // ADICIONADO: Salva a rolagem na lista de histórico do jogador
+    const historyEntry = {
+        result: result,
+        timestamp: timestamp
+    };
+    database.ref(`rollHistory/${player}`).push(historyEntry);
+}
+
+
+const lastRollRef = database.ref('lastRoll');
+lastRollRef.on('value', (snapshot) => {
+    // Se for a primeira vez que este código roda desde que a página carregou,
+    // nós ativamos a trava e paramos a execução aqui.
+    if (isInitialLoad) {
+        isInitialLoad = false; // Desativa a trava
+        return; // Impede que o resto da função seja executado
+    }
+
+    const rollData = snapshot.val();
+    if (rollData) {
+        // Nas vezes seguintes (cliques reais), esta parte será executada normalmente
+        playAnimation(rollData);
+    }
+});
+
+function playAnimation(data) {
+    const { player, result, filters } = data; // Extrai os dados recebidos
+
     const gifContainer = document.getElementById(`gif-container-${player}`);
     const numberContainer = document.getElementById(`number-container-${player}`);
     const timers = playerTimers[player];
@@ -41,13 +86,9 @@ function rollDice(sides, player) {
 
     const startNewAnimation = () => {
         timers.startAnimation = setTimeout(() => {
-            const result = Math.floor(Math.random() * sides) + 1;
             numberContainer.innerHTML = '';
             
-            // APLICA OS FILTROS SALVOS AQUI!
-            const filters = playerFilters[player];
             gifContainer.style.filter = `hue-rotate(${filters.hue}deg) saturate(${filters.saturation}%) brightness(${filters.brightness}%) contrast(${filters.contrast}%)`;
-
             gifContainer.style.backgroundImage = `url('${diceAnimationGif}?v=${Date.now()}')`;
             gifContainer.classList.add('visible');
 
@@ -64,7 +105,7 @@ function rollDice(sides, player) {
             timers.cleanup = setTimeout(() => {
                 gifContainer.style.backgroundImage = 'none';
                 numberContainer.innerText = '';
-                gifContainer.style.filter = 'none'; // Limpa o filtro
+                gifContainer.style.filter = 'none';
             }, 8500);
 
         }, 100);
@@ -76,6 +117,77 @@ function rollDice(sides, player) {
         timers.waitForFadeOut = setTimeout(startNewAnimation, 500);
     } else {
         startNewAnimation();
+    }
+}
+
+function openHistoryModal(player) {
+    activePlayerForHistoryModal = player;
+
+    historyLogList.innerHTML = '<p>Carregando histórico...</p>';
+    historyModalOverlay.classList.remove('hidden');
+
+    const historyRef = database.ref(`rollHistory/${player}`);
+    
+    // .once() lê os dados apenas uma vez
+    historyRef.once('value', (snapshot) => {
+        historyLogList.innerHTML = ''; // Limpa a mensagem de "Carregando"
+        
+        if (!snapshot.exists()) {
+            historyLogList.innerHTML = '<p>Nenhum histórico encontrado para este jogador.</p>';
+            return;
+        }
+
+        const historyData = snapshot.val();
+        
+        // Converte os dados em um array e inverte para mostrar o mais novo primeiro
+        const entries = Object.values(historyData).reverse();
+
+        entries.forEach(entry => {
+            // Formata a data e hora
+            const date = new Date(entry.timestamp);
+            const formattedDate = date.toLocaleDateString('pt-BR'); // DD/MM/YYYY
+            const formattedTime = date.toLocaleTimeString('pt-BR'); // HH:MM:SS
+            
+            // Cria o elemento de log
+            const logElement = document.createElement('div');
+            logElement.className = 'log-entry';
+            logElement.textContent = `${formattedDate} ${formattedTime} --- Resultado: ${entry.result}`;
+            
+            historyLogList.appendChild(logElement);
+        });
+    });
+}
+
+function closeHistoryModal() {
+    historyModalOverlay.classList.add('hidden');
+    activePlayerForHistoryModal = null;
+}
+
+function confirmClearHistory() {
+    if (!activePlayerForHistoryModal) return;
+
+    const player = activePlayerForHistoryModal;
+    
+    // Mostra a caixa de diálogo nativa do navegador
+    const userConfirmed = confirm('Você tem certeza que deseja apagar todo o histórico deste jogador? Esta ação não pode ser desfeita.');
+
+    // Se o usuário clicou em "OK" (true)
+    if (userConfirmed) {
+        // Pega a referência do histórico do jogador no Firebase
+        const historyRef = database.ref(`rollHistory/${player}`);
+        
+        // Remove todos os dados daquela referência
+        historyRef.remove()
+            .then(() => {
+                // Se a remoção for bem-sucedida, atualiza a tela
+                historyLogList.innerHTML = '<p>Histórico limpo com sucesso.</p>';
+                console.log(`Histórico para ${player} foi limpo.`);
+            })
+            .catch((error) => {
+                // Se houver um erro, informa o usuário
+                historyLogList.innerHTML = '<p>Ocorreu um erro ao limpar o histórico.</p>';
+                console.error("Erro ao limpar histórico: ", error);
+            });
     }
 }
 
@@ -148,3 +260,15 @@ hueSlider.addEventListener('input', updatePreview);
 saturationSlider.addEventListener('input', updatePreview);
 brightnessSlider.addEventListener('input', updatePreview);
 contrastSlider.addEventListener('input', updatePreview);
+
+modalOverlay.addEventListener('click', function(event) {
+    if (event.target === modalOverlay) {
+        closeModal();
+    }
+});
+
+historyModalOverlay.addEventListener('click', function(event) {
+    if (event.target === historyModalOverlay) {
+        closeHistoryModal();
+    }
+});
