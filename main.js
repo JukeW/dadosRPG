@@ -18,6 +18,7 @@ let activePlayerForHistoryModal = null;
 let isInitialLoad = true;
 
 const diceAnimationGif = 'assets/dice-roll-merge.gif';
+const diceAnimationGif2 = 'assets/dice-roll.gif';
 
 const totalAnimationDuration = 11450; // Duração total do GIF
 const numberAppearanceTime = 1250;   // Momento exato em que o número deve aparecer
@@ -104,7 +105,7 @@ function playAnimation(data) {
     
     // PASSO 1: Mostra o GIF completo e aplica os filtros
     gifContainer.style.filter = `hue-rotate(${filters.hue}deg) saturate(${filters.saturation}%) brightness(${filters.brightness}%) contrast(${filters.contrast}%)`;
-    gifContainer.style.backgroundImage = `url('${diceAnimationGif}?v=${Date.now()}')`;
+    gifContainer.style.backgroundImage = `url('${diceAnimationGif2}?v=${Date.now()}')`;
     gifContainer.classList.add('visible');
 
     // PASSO 2: Mostra o número com fade-in no momento certo
