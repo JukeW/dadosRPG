@@ -17,7 +17,20 @@ let activePlayerForModal = null;
 let activePlayerForHistoryModal = null;
 let isInitialLoad = true;
 
-const diceAnimationGif = 'assets/dice-roll.gif';
+const diceAnimationGif = 'assets/dice-roll-merge.gif';
+
+const totalAnimationDuration = 11450; // Duração total do GIF
+const numberAppearanceTime = 1250;   // Momento exato em que o número deve aparecer
+const numberVisibleDuration = 8500; // Quanto tempo o número fica visível (8 segundos)
+
+const imagesToPreload = [diceAnimationGif]; // <- Apenas um GIF para pré-carregar
+function preloadImages(urls) {
+    urls.forEach(url => {
+        const img = new Image();
+        img.src = url;
+    });
+}
+preloadImages(imagesToPreload);
 
 // Pega os elementos do DOM para o modal
 const modalOverlay = document.getElementById('modal-overlay');
@@ -76,48 +89,42 @@ lastRollRef.on('value', (snapshot) => {
 });
 
 function playAnimation(data) {
-    const { player, result, filters } = data; // Extrai os dados recebidos
+    const { player, result, filters } = data;
 
     const gifContainer = document.getElementById(`gif-container-${player}`);
     const numberContainer = document.getElementById(`number-container-${player}`);
     const timers = playerTimers[player];
 
+    // Interrompe qualquer animação anterior
     Object.values(timers).forEach(clearTimeout);
+    
+    // Limpa o estado visual anterior
+    numberContainer.classList.remove('visible');
+    numberContainer.innerText = '';
+    
+    // PASSO 1: Mostra o GIF completo e aplica os filtros
+    gifContainer.style.filter = `hue-rotate(${filters.hue}deg) saturate(${filters.saturation}%) brightness(${filters.brightness}%) contrast(${filters.contrast}%)`;
+    gifContainer.style.backgroundImage = `url('${diceAnimationGif}?v=${Date.now()}')`;
+    gifContainer.classList.add('visible');
 
-    const startNewAnimation = () => {
-        timers.startAnimation = setTimeout(() => {
-            numberContainer.innerHTML = '';
-            
-            gifContainer.style.filter = `hue-rotate(${filters.hue}deg) saturate(${filters.saturation}%) brightness(${filters.brightness}%) contrast(${filters.contrast}%)`;
-            gifContainer.style.backgroundImage = `url('${diceAnimationGif}?v=${Date.now()}')`;
-            gifContainer.classList.add('visible');
+    // PASSO 2: Mostra o número com fade-in no momento certo
+    timers.showNumber = setTimeout(() => {
+        numberContainer.innerText = result;
+        numberContainer.classList.add('visible');
+    }, numberAppearanceTime);
 
-            timers.showNumber = setTimeout(() => {
-                numberContainer.innerText = result;
-                numberContainer.classList.add('visible');
-            }, 1290);
+    // PASSO 3 (NOVO E CORRIGIDO): Agenda o fade-out do número após 8 segundos
+    timers.hideNumber = setTimeout(() => {
+        numberContainer.classList.remove('visible'); // Isso vai acionar a transição de fade-out do CSS
+    }, numberAppearanceTime + numberVisibleDuration); // Aparece em 1.25s + Fica visível por 8s = Some em 9.25s
 
-            timers.fadeOut = setTimeout(() => {
-                gifContainer.classList.remove('visible');
-                numberContainer.classList.remove('visible');
-            }, 8000);
-
-            timers.cleanup = setTimeout(() => {
-                gifContainer.style.backgroundImage = 'none';
-                numberContainer.innerText = '';
-                gifContainer.style.filter = 'none';
-            }, 8500);
-
-        }, 100);
-    };
-
-    if (gifContainer.classList.contains('visible')) {
+    // PASSO 4: Limpeza final, quando o GIF inteiro terminar
+    timers.cleanup = setTimeout(() => {
         gifContainer.classList.remove('visible');
-        numberContainer.classList.remove('visible');
-        timers.waitForFadeOut = setTimeout(startNewAnimation, 500);
-    } else {
-        startNewAnimation();
-    }
+        gifContainer.style.backgroundImage = 'none';
+        numberContainer.innerText = ''; // Garante que o número seja limpo
+        gifContainer.style.filter = 'none';
+    }, totalAnimationDuration);
 }
 
 function openHistoryModal(player) {
