@@ -29,7 +29,10 @@
                 <img src="icons/d20.png" alt="Dado D20" onclick="rollDice(20, 'player1')">
                 <img src="icons/d100.png" alt="Dado D100" onclick="rollDice(100, 'player1')">
             </div>
-            <button class="modify-btn" onclick="openModal('player1')">Modificar Dado</button>
+            <div class="action-buttons">
+                <button class="modify-btn" onclick="openModal('player1')">Modificar Dado</button>
+                <img src="icons/historico.png" class="history-btn" alt="Histórico de Rolagens" title="Histórico de Rolagens" onclick="openHistoryModal('player1')">
+            </div>
         </div>
 
         <!-- Jogador 2 -->
@@ -49,7 +52,10 @@
                 <img src="icons/d20.png" alt="Dado D20" onclick="rollDice(20, 'player2')">
                 <img src="icons/d100.png" alt="Dado D100" onclick="rollDice(100, 'player2')">
             </div>
-            <button class="modify-btn" onclick="openModal('player2')">Modificar Dado</button>
+            <div class="action-buttons">
+                <button class="modify-btn" onclick="openModal('player2')">Modificar Dado</button>
+                <img src="icons/historico.png" class="history-btn" alt="Histórico de Rolagens" title="Histórico de Rolagens" onclick="openHistoryModal('player2')">
+            </div>
         </div>
     </div>
 
@@ -95,8 +101,43 @@
             <button onclick="saveFilters()">Salvar</button>
         </div>
     </div>
-</div>
+    </div>
 
+    <div id="history-modal-overlay" class="hidden">
+        <div id="history-modal-content">
+            <span class="close-btn" onclick="closeHistoryModal()">&times;</span>
+            <h2>Histórico de Rolagens</h2>
+            <div id="history-log-list">
+                <!-- As rolagens serão inseridas aqui pelo JavaScript -->
+            </div>
+            <div class="history-modal-actions">
+                <button id="clear-history-btn" onclick="confirmClearHistory()">Limpar Histórico</button>
+            </div>
+
+        </div>
+    </div>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-database-compat.js"></script>
+
+    <script>
+      const firebaseConfig = {
+        apiKey: "AIzaSyDAnEwPxevefsRtRQxAHbXrQunXt9aO97k",
+        authDomain: "dadosrpg464.firebaseapp.com",
+        databaseURL: "https://dadosrpg464-default-rtdb.firebaseio.com",
+        projectId: "dadosrpg464",
+        storageBucket: "dadosrpg464.firebasestorage.app",
+        messagingSenderId: "115422378890",
+        appId: "1:115422378890:web:9dd533d4652a3ea63d2673",
+        measurementId: "G-NHB90DK9W2"
+      };
+
+      // Inicializa o Firebase (esta linha estava faltando)
+      firebase.initializeApp(firebaseConfig);
+      
+      // Define a variável 'database' para que o script main.js possa acessá-la (esta linha estava faltando)
+      const database = firebase.database();
+    </script>
     <script src="main.js"></script>
 </body>
 </html>
