@@ -17,12 +17,19 @@ let activePlayerForModal = null;
 let activePlayerForHistoryModal = null;
 let isInitialLoad = true;
 
+let isAnimating = {
+    player1: false,
+    player2: false
+};
+
 const diceAnimationGif = 'assets/dice-roll-merge.gif';
 const diceAnimationGif2 = 'assets/dice-roll.gif';
+const diceAnimationOutroGif = 'assets/dice-roll-outro.gif';
 
 const totalAnimationDuration = 11450; // Duração total do GIF
 const numberAppearanceTime = 1250;   // Momento exato em que o número deve aparecer
 const numberVisibleDuration = 8500; // Quanto tempo o número fica visível (8 segundos)
+const outroGifDuration = 850;
 
 const imagesToPreload = [diceAnimationGif]; // <- Apenas um GIF para pré-carregar
 function preloadImages(urls) {
@@ -90,42 +97,76 @@ lastRollRef.on('value', (snapshot) => {
 });
 
 function playAnimation(data) {
-    const { player, result, filters } = data;
+    const { player } = data;
 
+    if (isAnimating[player]) {
+        // Se uma animação já está rodando, toca a interrupção
+        playInterruptionAnimation(data);
+    } else {
+        // Se não, toca a animação normal
+        startNewAnimation(data);
+    }
+}
+
+// Animação normal, do início ao fim
+function startNewAnimation(data) {
+    const { player, result, filters } = data;
     const gifContainer = document.getElementById(`gif-container-${player}`);
     const numberContainer = document.getElementById(`number-container-${player}`);
     const timers = playerTimers[player];
 
-    // Interrompe qualquer animação anterior
-    Object.values(timers).forEach(clearTimeout);
-    
-    // Limpa o estado visual anterior
-    numberContainer.classList.remove('visible');
+    isAnimating[player] = true; // Define o estado como "animando"
+
+    // Limpa estado anterior (importante para o reinício)
+    numberContainer.classList.remove('visible', 'fast-fade');
     numberContainer.innerText = '';
     
-    // PASSO 1: Mostra o GIF completo e aplica os filtros
+    // PASSO 1: Mostra o GIF completo
     gifContainer.style.filter = `hue-rotate(${filters.hue}deg) saturate(${filters.saturation}%) brightness(${filters.brightness}%) contrast(${filters.contrast}%)`;
     gifContainer.style.backgroundImage = `url('${diceAnimationGif}?v=${Date.now()}')`;
     gifContainer.classList.add('visible');
 
-    // PASSO 2: Mostra o número com fade-in no momento certo
+    // PASSO 2: Mostra o número
     timers.showNumber = setTimeout(() => {
         numberContainer.innerText = result;
         numberContainer.classList.add('visible');
     }, numberAppearanceTime);
 
-    // PASSO 3 (NOVO E CORRIGIDO): Agenda o fade-out do número após 8 segundos
+    // PASSO 3: Esconde o número
     timers.hideNumber = setTimeout(() => {
-        numberContainer.classList.remove('visible'); // Isso vai acionar a transição de fade-out do CSS
-    }, numberAppearanceTime + numberVisibleDuration); // Aparece em 1.25s + Fica visível por 8s = Some em 9.25s
+        numberContainer.classList.remove('visible');
+    }, numberAppearanceTime + numberVisibleDuration);
 
-    // PASSO 4: Limpeza final, quando o GIF inteiro terminar
+    // PASSO 4: Limpeza final
     timers.cleanup = setTimeout(() => {
         gifContainer.classList.remove('visible');
-        gifContainer.style.backgroundImage = 'none';
-        numberContainer.innerText = ''; // Garante que o número seja limpo
+        numberContainer.innerText = '';
         gifContainer.style.filter = 'none';
+        isAnimating[player] = false; // Reseta o estado
     }, totalAnimationDuration);
+}
+
+// NOVA Animação de interrupção
+function playInterruptionAnimation(data) {
+    const { player } = data;
+    const gifContainer = document.getElementById(`gif-container-${player}`);
+    const numberContainer = document.getElementById(`number-container-${player}`);
+    const timers = playerTimers[player];
+
+    // Cancela todos os timers da animação anterior
+    Object.values(timers).forEach(clearTimeout);
+
+    // Faz o número sumir com o fade rápido
+    numberContainer.classList.add('fast-fade');
+    numberContainer.classList.remove('visible');
+
+    // Toca o GIF de "outro"
+    gifContainer.style.backgroundImage = `url('${diceAnimationOutroGif}?v=${Date.now()}')`;
+
+    // Quando o "outro" terminar, chama a nova animação completa
+    timers.startNext = setTimeout(() => {
+        startNewAnimation(data); // Inicia a próxima rolagem
+    }, outroGifDuration);
 }
 
 function openHistoryModal(player) {
@@ -252,16 +293,44 @@ function resetFilters() {
 
 function saveFilters() {
     if (activePlayerForModal) {
-        // Salva os valores dos sliders no objeto de filtros do jogador ativo
+        // Passo 1: Atualiza o objeto local (como antes)
         playerFilters[activePlayerForModal] = {
-            hue: hueSlider.value,
-            saturation: saturationSlider.value,
-            brightness: brightnessSlider.value,
-            contrast: contrastSlider.value
+            hue: parseFloat(hueSlider.value), // Usar parseFloat para garantir que são números
+            saturation: parseFloat(saturationSlider.value),
+            brightness: parseFloat(brightnessSlider.value),
+            contrast: parseFloat(contrastSlider.value)
         };
+
+        // Passo 2: Salva as configurações atualizadas no Firebase
+        const playerSettingsRef = database.ref(`playerSettings/${activePlayerForModal}`);
+        playerSettingsRef.set(playerFilters[activePlayerForModal])
+            .then(() => {
+                console.log(`Filtros para ${activePlayerForModal} salvos com sucesso no Firebase.`);
+            })
+            .catch((error) => {
+                console.error("Erro ao salvar filtros no Firebase: ", error);
+            });
     }
     closeModal();
 }
+
+function loadPlayerSettings() {
+    const settingsRef = database.ref('playerSettings');
+    settingsRef.once('value', (snapshot) => {
+        const settingsFromDB = snapshot.val();
+        
+        if (settingsFromDB) {
+            // Se encontrou configurações salvas, atualiza a variável local
+            playerFilters = settingsFromDB;
+            console.log("Configurações de jogador carregadas do Firebase.");
+        } else {
+            // Se não encontrou nada (primeira visita), salva os valores padrão no Firebase
+            console.log("Nenhuma configuração encontrada, salvando padrões no Firebase.");
+            settingsRef.set(playerFilters);
+        }
+    });
+}
+loadPlayerSettings();
 
 // Adiciona os listeners para os sliders atualizarem a preview em tempo real
 hueSlider.addEventListener('input', updatePreview);
