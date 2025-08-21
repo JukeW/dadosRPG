@@ -1,0 +1,234 @@
+@font-face {
+    font-family: 'ColumbiaSerial';
+    src: url('assets/columbiaserialmediumregular.ttf') format('truetype');
+}
+
+body {
+    font-family: 'ColumbiaSerial', sans-serif;
+    background-color: #000000;
+    color: white;
+    text-align: center;
+}
+
+.players-container {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 50px;
+}
+
+.player {
+    width: 45%;
+}
+
+
+/* MUDANÇA: Nova classe que será adicionada via JS para ativar o fade-in */
+.result-area.visible {
+    opacity: 1;
+}
+
+.dice-icons img {
+    width: 60px;
+    height: 60px;
+    margin: 5px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.dice-icons img:hover {
+    transform: scale(1.1);
+}
+
+/* O contêiner do número começa invisível */
+.result-number {
+    opacity: 0;
+    /* Efeito de fade-in de 2 segundos para o número */
+    transition: opacity 0.5s ease-in;
+}
+
+/* Quando a classe 'visible' for adicionada, o número se tornará visível */
+.result-number.visible {
+    opacity: 1;
+}
+
+.result-wrapper {
+    position: relative; /* Essencial para o posicionamento dos filhos */
+    
+    /* AQUI VOCÊ CONTROLA O TAMANHO DO GIF! */
+    /* Aumente este valor para o tamanho desejado. */
+    height: 250px; /* Exemplo: aumentado de 150px para 250px */
+    
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+.gif-container {
+    /* Posicionamento para preencher o wrapper */
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+
+    /* Estilos do GIF */
+    background-position: center;
+    background-repeat: no-repeat;
+    /* Use 'contain' para garantir que o GIF caiba, ou 'cover' para preencher */
+    background-size: contain;
+
+    /* Animação de fade do GIF */
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+}
+
+.number-container {
+    /* Posicionamento para preencher o wrapper e ficar sobre o GIF */
+    position: absolute;
+    top: 4px;
+    right: 6px;
+    width: 100%;
+    height: 100%;
+    z-index: 2; /* Garante que o número fique na frente */
+
+    /* Centralização do número */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    /* AQUI VOCÊ CONTROLA O TAMANHO DO NÚMERO! */
+    /* Este valor agora é fixo e não depende do tamanho do GIF. */
+    font-size: 5em;
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
+    
+    /* Animação de fade do número */
+    opacity: 0;
+    transition: opacity 0.2s ease-in;
+
+    font-variant-numeric: tabular-nums;
+}
+
+/* Classes 'visible' para acionar as animações via JS */
+.gif-container.visible,
+.number-container.visible {
+    opacity: 1;
+}
+
+.modify-btn {
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-family: 'ColumbiaSerial', sans-serif;
+    font-size: 1em;
+    cursor: pointer;
+    border: 2px solid white;
+    background-color: transparent;
+    color: white;
+    border-radius: 5px;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.modify-btn:hover {
+    background-color: white;
+    color: #333;
+}
+
+/* Estilos do Modal */
+#modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+#modal-overlay:not(.hidden) {
+    opacity: 1;
+    pointer-events: all;
+}
+
+#modal-content {
+    background-color: #444;
+    padding: 25px;
+    border-radius: 10px;
+    width: 90%;
+    max-width: 500px;
+    position: relative;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+}
+
+.close-btn {
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    font-size: 2.5em;
+    line-height: 1;
+    cursor: pointer;
+    color: #aaa;
+}
+.close-btn:hover {
+    color: white;
+}
+
+#modal-preview-gif {
+    display: block;
+    width: 150px;
+    height: 150px;
+    margin: 0 auto 20px auto;
+    border-radius: 10px;
+    background-color: #222;
+}
+
+.filters-grid {
+    display: grid;
+    gap: 15px;
+}
+
+.slider-group {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+.slider-group label {
+    flex-basis: 80px;
+    text-align: left;
+}
+.slider-group input[type="range"] {
+    flex-grow: 1;
+}
+.slider-group span {
+    flex-basis: 50px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.modal-buttons {
+    margin-top: 25px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.modal-buttons button {
+    padding: 10px 20px;
+    font-family: 'ColumbiaSerial', sans-serif;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+}
+.modal-buttons button:last-child {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.hidden {
+    display: none !important; /* Usamos !important para garantir a sobreposição */
+}
+
+.userImg{
+    width: 25%;
+}

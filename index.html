@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rolador de Dados RPG</title>
+    <link rel="stylesheet" href="main.css">
+    <link rel="icon" type="image/png" href="./icons/dado-title.png">
+</head>
+<body>
+
+    <div class="players-container">
+        <!-- Jogador 1 -->
+        <div class="player">
+            <img src="assets/GiovanniFrost.png" alt="Giovanni Frost" class="userImg">
+            <h2>Giovanni Frost</h2>
+            <div id="result-wrapper-player1" class="result-wrapper">
+                <!-- Este div será para o GIF de fundo -->
+                <div id="gif-container-player1" class="gif-container"></div>
+                <!-- Este div será para o número do resultado -->
+                <div id="number-container-player1" class="number-container"></div>
+            </div>
+            <div class="dice-icons">
+                <img src="icons/d4.png" alt="Dado D4" onclick="rollDice(4, 'player1')">
+                <img src="icons/d6.png" alt="Dado D6" onclick="rollDice(6, 'player1')">
+                <img src="icons/d8.png" alt="Dado D8" onclick="rollDice(8, 'player1')">
+                <img src="icons/d10.png" alt="Dado D10" onclick="rollDice(10, 'player1')">
+                <img src="icons/d12.png" alt="Dado D12" onclick="rollDice(12, 'player1')">
+                <img src="icons/d20.png" alt="Dado D20" onclick="rollDice(20, 'player1')">
+                <img src="icons/d100.png" alt="Dado D100" onclick="rollDice(100, 'player1')">
+            </div>
+            <button class="modify-btn" onclick="openModal('player1')">Modificar Dado</button>
+        </div>
+
+        <!-- Jogador 2 -->
+        <div class="player">
+            <img src="assets/AbigailYork.png" alt="Abigail York" class="userImg">
+            <h2>Abigail York</h2>
+            <div id="result-wrapper-player2" class="result-wrapper">
+                <div id="gif-container-player2" class="gif-container"></div>
+                <div id="number-container-player2" class="number-container"></div>
+            </div>
+            <div class="dice-icons">
+                <img src="icons/d4.png" alt="Dado D4" onclick="rollDice(4, 'player2')">
+                <img src="icons/d6.png" alt="Dado D6" onclick="rollDice(6, 'player2')">
+                <img src="icons/d8.png" alt="Dado D8" onclick="rollDice(8, 'player2')">
+                <img src="icons/d10.png" alt="Dado D10" onclick="rollDice(10, 'player2')">
+                <img src="icons/d12.png" alt="Dado D12" onclick="rollDice(12, 'player2')">
+                <img src="icons/d20.png" alt="Dado D20" onclick="rollDice(20, 'player2')">
+                <img src="icons/d100.png" alt="Dado D100" onclick="rollDice(100, 'player2')">
+            </div>
+            <button class="modify-btn" onclick="openModal('player2')">Modificar Dado</button>
+        </div>
+    </div>
+
+    <div id="modal-overlay" class="hidden">
+    <div id="modal-content">
+        <span class="close-btn" onclick="closeModal()">&times;</span>
+        <h2>Configurar Filtros do Dado</h2>
+        
+        <img id="modal-preview-gif" src="assets/dice-roll.gif" alt="Preview do Dado">
+
+        <div class="filters-grid">
+            <!-- Matiz (Hue) -->
+            <div class="slider-group">
+                <label for="hue-slider">Matiz</label>
+                <input type="range" id="hue-slider" min="0" max="360" value="0" step="1">
+                <span id="hue-value">0°</span>
+            </div>
+
+            <!-- Saturação (Saturation) -->
+            <div class="slider-group">
+                <label for="saturation-slider">Saturação</label>
+                <input type="range" id="saturation-slider" min="0" max="200" value="100" step="1">
+                <span id="saturation-value">100%</span>
+            </div>
+
+            <!-- Brilho (Brightness) -->
+            <div class="slider-group">
+                <label for="brightness-slider">Brilho</label>
+                <input type="range" id="brightness-slider" min="0" max="200" value="100" step="1">
+                <span id="brightness-value">100%</span>
+            </div>
+
+            <!-- Contraste (Contrast) -->
+            <div class="slider-group">
+                <label for="contrast-slider">Contraste</label>
+                <input type="range" id="contrast-slider" min="0" max="200" value="100" step="1">
+                <span id="contrast-value">100%</span>
+            </div>
+        </div>
+
+        <div class="modal-buttons">
+            <button onclick="resetFilters()">Retornar ao Padrão</button>
+            <button onclick="saveFilters()">Salvar</button>
+        </div>
+    </div>
+</div>
+
+    <script src="main.js"></script>
+</body>
+</html>
